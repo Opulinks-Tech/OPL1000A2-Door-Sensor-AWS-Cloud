@@ -39,7 +39,7 @@
 
 用户可以参考该工程实现AWS双向控制应用（上行和下行数据共存，通过MQTT协议与AWS云端通讯）的开发. 通常包括三个步骤.
 
-1. 在AWS云端注册并定义好设备，获取设备的五元组； 
+1. 在AWS云端注册并定义好设备，获取主机名（host name）, 客户端标识符（client id）, 物品名称（thing name）, 证书（certificate）, 和密钥（key）； 
 2. 基于现有的工程，按需修改或扩展现有的功能；
 3. 查看设备端和OpulinksAWSBidirection APP端，验证预期的功能。 
 
