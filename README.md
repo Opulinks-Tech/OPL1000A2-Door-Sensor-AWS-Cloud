@@ -7,7 +7,7 @@
 - 在单个OpulinksAWSBidirection APP上实现控制LED灯的开关和显示门磁的闭合状态；     
 
 ## 功能框图
-![avatar](D:\Projects\A2\reference\aws_contact_door\local_aws_folder/magnetic_door_contact_LED_device_frame.png)
+![avatar](https://github.com/Opulinks-Tech/OPL1000A2-Sensor-Device-Reference-Code-Aws-Cloud-with-MQTT/blob/master/magnetic_door_contact_LED_device_frame.png)
 
 ## 目录结构
 
