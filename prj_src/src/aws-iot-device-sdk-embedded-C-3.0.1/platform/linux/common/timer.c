@@ -28,6 +28,8 @@ extern "C" {
 #include <stdbool.h>
 #include "sys_common.h"
 #include "timer_platform.h"
+#include "util_func.h"
+
 
 #if 0
 static uint32_t hal_get_1MHz_timer(void)
@@ -48,9 +50,13 @@ static void utc_clock_get(struct timeval *ptv)
 
 static void utc_clock_get(struct timeval *ptv)
 {
-	long long microsec = xTaskGetTickCount()*1000;
-	ptv->tv_sec  = microsec / 1000000;
-    ptv->tv_usec = microsec % 1000000;
+    //long long microsec = xTaskGetTickCount()*1000;
+    //ptv->tv_sec  = microsec / 1000000;
+    //ptv->tv_usec = microsec % 1000000;
+    uint32_t now_sec, now_ms; 
+    util_get_current_time(&now_sec, &now_ms);
+    ptv->tv_sec = now_sec;
+    ptv->tv_usec = now_ms*1000;
 }
 
 

@@ -360,7 +360,7 @@ int Sensor_Https_Post_On_Line(void)
  
             }
             else
-            {   printf("Sensor_Https_Post_On_Line %d \n",__LINE__);
+            {
                 PostResult = MQTT_UNEXPECTED_CLIENT_STATE_ERROR;
             }
 

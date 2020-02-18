@@ -148,10 +148,10 @@ void __Patch_EntryPoint(void)
     at_cmd_switch_uart1_dbguart = Main_AtUartDbgUartSwitch;
 
     // modify the heap size, from 0x43C000 to 0x44F000
-    g_ucaMemPartAddr = (uint8_t*) 0x42C800;
-    g_ulMemPartTotalSize = 0x22800;
+    g_ucaMemPartAddr = (uint8_t*) 0x42F800;
+    g_ulMemPartTotalSize = 0x1F800;
 
-    Sys_SetUnsuedSramEndBound(0x42C800);
+    Sys_SetUnsuedSramEndBound(0x42F800);
 
     g_xaMemoryTable[4].ulBlockNum = 0;
     g_xaMemoryTable[5].ulBlockNum = 0;
