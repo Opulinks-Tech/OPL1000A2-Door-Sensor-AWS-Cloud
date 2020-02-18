@@ -6,9 +6,7 @@ Library : 4208
 ## Release Date: 2020/02/18
 
 ## Function & Feature Update 
-1. Documents updating:
-    1.1 OPL1000-aws-key-app-tool-guide, aws key tool, apk user guide.  
-    1.2 OPL1000-Reference-Sensor-Device-AWS-cloud-guide, R01-v01, AWS sensor device reference user guide.  
+1. follow the directory structure of prj_src as SDK does.  
 2. Based on A2 SDK MP2.16.
 
 ## Bug Fix List 
