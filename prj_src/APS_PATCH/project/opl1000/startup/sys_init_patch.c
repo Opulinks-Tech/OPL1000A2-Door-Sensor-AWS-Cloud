@@ -28,6 +28,7 @@
 #include "hal_vic_patch.h"
 #include "hal_gpio.h"
 #include "hal_spi_patch.h"
+#include "hal_flash_patch.h"
 #include "hal_uart_patch.h"
 #include "hal_dbg_uart_patch.h"
 #include "hal_auxadc_patch.h"
@@ -51,6 +52,7 @@
 #include "mw_fim_patch.h"
 #include "mw_fim_default_group01_patch.h"
 #include "sys_cfg_patch.h"
+#include "opl1000_it_patch.h"
 
 
 /*
@@ -316,7 +318,7 @@ void Sys_DriverInit_patch(void)
     // Other driver config need by Task-level (sleep strategy)
 
     // Diag task
-    Hal_DbgUart_RxCallBackFuncSet(uartdbg_rx_int_handler);
+    //Hal_DbgUart_RxCallBackFuncSet(uartdbg_rx_int_handler);  //Assigned in diag_task
     // cold boot
     if (0 == Boot_CheckWarmBoot())
     {
@@ -484,6 +486,7 @@ void SysInit_EntryPoint(void)
     Hal_Pin_PatchInit();
     Hal_Vic_PatchInit();
     Hal_Spi_PatchInit();
+    Hal_Flash_PatchInit();
     Hal_Uart_PatchInit();
     Hal_DbgUart_PatchInit();
     Hal_Aux_PatchInit();
@@ -495,6 +498,7 @@ void SysInit_EntryPoint(void)
     ps_patch_init();
 
     // 17. ISR
+    ISR_Pre_PatchInit();
 
     // 18. DIAG
     Diag_PatchInit();

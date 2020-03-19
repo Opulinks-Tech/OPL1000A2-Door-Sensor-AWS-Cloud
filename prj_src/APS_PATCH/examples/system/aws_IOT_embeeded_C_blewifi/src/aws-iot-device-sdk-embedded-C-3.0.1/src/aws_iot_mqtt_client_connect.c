@@ -44,6 +44,13 @@ extern "C" {
 #include <aws_iot_mqtt_client.h>
 #include "aws_iot_mqtt_client_interface.h"
 #include "aws_iot_mqtt_client_common_internal.h"
+#include "blewifi_configuration.h"
+
+#ifdef BLEWIFI_ENHANCE_AWS
+#include "lwip/etharp.h"
+#include "blewifi_ctrl.h"
+#include "blewifi_wifi_api.h"
+#endif
 
 typedef union {
 	uint8_t all;    /**< all connect flags */
@@ -472,6 +479,11 @@ IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, IoT_Client_Connect_Par
 		FUNC_EXIT_RC(NETWORK_ALREADY_CONNECTED_ERROR);
 	}
 
+    #ifdef BLEWIFI_ENHANCE_AWS
+    BleWifi_Wifi_SetDTIM(0);
+    lwip_one_shot_arp_enable();
+    #endif
+
 	aws_iot_mqtt_set_client_state(pClient, clientState, CLIENT_STATE_CONNECTING);
 
 	rc = _aws_iot_mqtt_internal_connect(pClient, pConnectParams);
@@ -485,6 +497,10 @@ IoT_Error_t aws_iot_mqtt_connect(AWS_IoT_Client *pClient, IoT_Client_Connect_Par
 		aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_CONNECTING, CLIENT_STATE_DISCONNECTED_ERROR);
 	} else {
 		aws_iot_mqtt_set_client_state(pClient, CLIENT_STATE_CONNECTING, CLIENT_STATE_CONNECTED_IDLE);
+
+        #ifdef BLEWIFI_ENHANCE_AWS
+        BleWifi_Ctrl_MsgSend(BLEWIFI_CTRL_MSG_NETWORKING_STOP, NULL, 0);
+        #endif
 	}
 
 	FUNC_EXIT_RC(rc);

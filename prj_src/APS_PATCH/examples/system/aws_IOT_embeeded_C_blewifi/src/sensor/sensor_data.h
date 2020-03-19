@@ -19,11 +19,16 @@
 #define __SENSOR_DATA_H__
 #include <stdint.h>
 #include <time.h> // This is for time_t
+#include "blewifi_configuration.h"
 
 #define SENSOR_DATA_OK      0
 #define SENSOR_DATA_FAIL    1
 
+#ifdef BLEWIFI_ENHANCE_AWS
+#define SENSOR_COUNT   (8)
+#else
 #define SENSOR_COUNT   (32)
+#endif
 
 typedef struct
 {

@@ -924,7 +924,10 @@ static void BleWifi_Ctrl_TaskEvtHandler_WifiDisconnectionInd(uint32_t evt_type, 
 
 static void BleWifi_Ctrl_TaskEvtHandler_WifiGotIpInd(uint32_t evt_type, void *data, int len)
 {
+    #if (IOT_DEVICE_DATA_TX_EN == 1)
     uint8_t ret;
+    #endif
+    
     BLEWIFI_INFO("BLEWIFI: MSG BLEWIFI_CTRL_MSG_WIFI_GOT_IP_IND \r\n");
     if (( true == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_TEST_MODE))
         && (true == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_AT_WIFI_MODE)))
@@ -953,11 +956,15 @@ static void BleWifi_Ctrl_TaskEvtHandler_WifiGotIpInd(uint32_t evt_type, void *da
     Sensor_Data_ResetBuffer();
 
     // Trigger to send http data
+    #if (IOT_DEVICE_DATA_TX_EN == 1)
     ret = Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), TIMER_POST,  BleWifi_SntpGetRawData());
     if(ret == SENSOR_DATA_OK)
     {
         Iot_Data_TxTask_MsgSend(IOT_DATA_TX_MSG_DATA_POST, NULL, 0);
     }
+    #else
+    Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), TIMER_POST,  BleWifi_SntpGetRawData());
+    #endif
 
     // When got ip then start timer to post data
     //osTimerStop(g_tAppCtrlHttpPostTimer);
@@ -1007,7 +1014,10 @@ static void BleWifi_Ctrl_TaskEvtHandler_ButtonDebounceTimeOut(uint32_t evt_type,
 {
     uint32_t u32sec = 0;
     unsigned int u32PinLevel = 0;
+
+    #if (IOT_DEVICE_DATA_TX_EN == 1)
     uint8_t ret;
+    #endif
 
     BLEWIFI_INFO("BLEWIFI: MSG BLEWIFI_CTRL_MSG_BUTTON_DEBOUNCETIMEOUT \r\n");
 
@@ -1099,12 +1109,16 @@ static void BleWifi_Ctrl_TaskEvtHandler_ButtonDebounceTimeOut(uint32_t evt_type,
                 // if the state is not at ble connection and network (ble adv), then do post data
                 if(false == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_BLE) && false == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_NETWORK))
                 {
-                    
+                    #if (IOT_DEVICE_DATA_TX_EN == 1)
                     ret = Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), SHORT_TRIG,  BleWifi_SntpGetRawData());
                     if(ret == SENSOR_DATA_OK)
                     {
                         Iot_Data_TxTask_MsgSend(IOT_DATA_TX_MSG_DATA_POST, NULL, 0);
                     }
+                    #else
+                    Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), SHORT_TRIG,  BleWifi_SntpGetRawData());
+                    #endif
+                    
                     #if 0//Goter
                     BleWifi_Ctrl_EventStatusSet(BLEWIFI_CTRL_EVENT_BIT_SHORT_PRESS, true);
                     BleWifi_Ctrl_LedStatusChange();
@@ -1183,7 +1197,11 @@ static void BleWifi_Ctrl_TaskEvtHandler_DoorDebounceTimeOut(uint32_t evt_type, v
 {
     BLEWIFI_INFO("BLEWIFI: MSG BLEWIFI_CTRL_MSG_DOOR_DEBOUNCETIMEOUT \r\n");
     unsigned int u32PinLevel = 0;
+
+    #if (IOT_DEVICE_DATA_TX_EN == 1)
     uint8_t ret;
+    #endif
+    
     // Get the status of GPIO (Low / High)
     u32PinLevel = Hal_Vic_GpioInput(MAGNETIC_IO_PORT);
     printf("MAG_IO_PORT pin level = %s\r\n", u32PinLevel ? "GPIO_LEVEL_HIGH:OPEN" : "GPIO_LEVEL_LOW:CLOSE");
@@ -1203,11 +1221,16 @@ static void BleWifi_Ctrl_TaskEvtHandler_DoorDebounceTimeOut(uint32_t evt_type, v
         {
             /* Send to IOT task to post data */
             BleWifi_Ctrl_EventStatusSet(BLEWIFI_CTRL_EVENT_BIT_DOOR, true); // true is Door Close
+
+            #if (IOT_DEVICE_DATA_TX_EN == 1)
             ret = Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR) ? DOOR_OPEN:DOOR_CLOSE,  BleWifi_SntpGetRawData());
             if(ret == SENSOR_DATA_OK)
             {
                 Iot_Data_TxTask_MsgSend(IOT_DATA_TX_MSG_DATA_POST, NULL, 0);
             }
+            #else
+            Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR) ? DOOR_OPEN:DOOR_CLOSE,  BleWifi_SntpGetRawData());
+            #endif
         }
     }
     else
@@ -1221,11 +1244,16 @@ static void BleWifi_Ctrl_TaskEvtHandler_DoorDebounceTimeOut(uint32_t evt_type, v
         {
             /* Send to IOT task to post data */
             BleWifi_Ctrl_EventStatusSet(BLEWIFI_CTRL_EVENT_BIT_DOOR, false); // false is Door Open
+
+            #if (IOT_DEVICE_DATA_TX_EN == 1)
             ret = Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR) ? DOOR_OPEN:DOOR_CLOSE,  BleWifi_SntpGetRawData());
             if(ret == SENSOR_DATA_OK)
             {
                 Iot_Data_TxTask_MsgSend(IOT_DATA_TX_MSG_DATA_POST, NULL, 0);
             }
+            #else
+            Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR) ? DOOR_OPEN:DOOR_CLOSE,  BleWifi_SntpGetRawData());
+            #endif
         }
     }
 }
@@ -1235,12 +1263,16 @@ static void BleWifi_Ctrl_TaskEvtHandler_HttpPostDataInd(uint32_t evt_type, void 
     BLEWIFI_INFO("BLEWIFI: MSG BLEWIFI_CTRL_MSG_HTTP_POST_DATA_IND \r\n");
 
     // Trigger to send http data
+    #if (IOT_DEVICE_DATA_TX_EN == 1)
     uint8_t ret;
     ret = Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), TIMER_POST,  BleWifi_SntpGetRawData());
     if(ret == SENSOR_DATA_OK)
     {
         Iot_Data_TxTask_MsgSend(IOT_DATA_TX_MSG_DATA_POST, NULL, 0);
     }
+    #else
+    Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), TIMER_POST,  BleWifi_SntpGetRawData());
+    #endif
 }
 
 static void BleWifi_Ctrl_TaskEvtHandler_HttpPostDataTYPE1_2_3_Retry(uint32_t evt_type, void *data, int len)
@@ -1249,12 +1281,17 @@ static void BleWifi_Ctrl_TaskEvtHandler_HttpPostDataTYPE1_2_3_Retry(uint32_t evt
 
     // Trigger to re-send http data type 1,2,3
     g_nDoType1_2_3_Retry_Flag = 1;
+    
+    #if (IOT_DEVICE_DATA_TX_EN == 1)
     uint8_t ret;
     ret = Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), g_nLastPostDatatType,  BleWifi_SntpGetRawData());
     if(ret == SENSOR_DATA_OK)
     {
         Iot_Data_TxTask_MsgSend(IOT_DATA_TX_MSG_DATA_POST, NULL, 0);
     }
+    #else
+    Sensor_Data_Push(BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_DOOR), g_nLastPostDatatType,  BleWifi_SntpGetRawData());
+    #endif
 }
 
 static void BleWifi_Ctrl_TaskEvtHandler_OtherLedTimer(uint32_t evt_type, void *data, int len)
@@ -1280,7 +1317,7 @@ void BleWifi_Ctrl_NetworkingStart(void)
     }
     else
     {
-        BLEWIFI_WARN("[%s %d] BLEWIFI_CTRL_EVENT_BIT_NETWORK already true\n", __func__, __LINE__);
+        //BLEWIFI_WARN("[%s %d] BLEWIFI_CTRL_EVENT_BIT_NETWORK already true\n", __func__, __LINE__);
     }
 }
 
@@ -1292,10 +1329,14 @@ void BleWifi_Ctrl_NetworkingStop(void)
 
         BleWifi_Ctrl_EventStatusSet(BLEWIFI_CTRL_EVENT_BIT_NETWORK, false);
         BleWifi_Ctrl_LedStatusChange();
+
+        #ifdef BLEWIFI_ENHANCE_AWS
+        BleWifi_Ble_AdvertisingTimeChange(BLEWIFI_BLE_ADVERTISEMENT_INTERVAL_MIN, BLEWIFI_BLE_ADVERTISEMENT_INTERVAL_MAX);
+        #endif
     }
     else
     {
-        BLEWIFI_WARN("[%s %d] BLEWIFI_CTRL_EVENT_BIT_NETWORK already false\n", __func__, __LINE__);
+        //BLEWIFI_WARN("[%s %d] BLEWIFI_CTRL_EVENT_BIT_NETWORK already false\n", __func__, __LINE__);
     }
 }
 

@@ -296,8 +296,10 @@ int Sensor_Https_Post_On_Line(void)
     if (SENSOR_DATA_OK == Sensor_Data_CheckEmpty())
         return SENSOR_DATA_OK;
 
+#if (IOT_DEVICE_DATA_TX_EN == 1)
     while (1)
     {
+#endif
         // If this statement is true, it means ring buffer is empty.
         if (-1 == Sensor_Updata_Post_Content(&PostContentData))
         {
@@ -333,9 +335,14 @@ int Sensor_Https_Post_On_Line(void)
                 break;
             }
 
+            #if (IOT_DEVICE_DATA_TX_EN == 1)
             if (true == BleWifi_Ctrl_EventStatusWait(CAN_DO_IOT_TX , 2*YIELD_TIMEOUT))
+            #endif
             {
-                BleWifi_Ctrl_EventStatusSet(CAN_DO_IOT_RX, false);  
+                #if (IOT_DEVICE_DATA_TX_EN == 1)
+                BleWifi_Ctrl_EventStatusSet(CAN_DO_IOT_RX, false);
+                #endif
+                
                 IOT_INFO("---> aws_iot_mqtt_publish ");
                 PostResult = aws_iot_mqtt_publish(&client, SubscribeTopic_Door, strlen(SubscribeTopic_Door), &paramsQOS1);
                 IOT_INFO("<--- aws_iot_mqtt_publish ");
@@ -359,10 +366,12 @@ int Sensor_Https_Post_On_Line(void)
                 }
  
             }
+            #if (IOT_DEVICE_DATA_TX_EN == 1)
             else
             {
                 PostResult = MQTT_UNEXPECTED_CLIENT_STATE_ERROR;
             }
+            #endif
 
             // If device doesn't get IP, then break (no retry any more).
             if (false == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_GOT_IP))
@@ -372,7 +381,9 @@ int Sensor_Https_Post_On_Line(void)
             }
         }while((PostResult == MQTT_REQUEST_TIMEOUT_ERROR) && (count_retry_no_puback < NO_PUBACK_RETRY));
 
-        BleWifi_Ctrl_EventStatusSet(CAN_DO_IOT_RX, true); 
+        #if (IOT_DEVICE_DATA_TX_EN == 1)
+        BleWifi_Ctrl_EventStatusSet(CAN_DO_IOT_RX, true);
+        #endif
         /*++++++++++++++++++++++ Goter ++++++++++++++++++++++++++++*/
         
         if (SENSOR_DATA_FAIL == PostResult)
@@ -459,7 +470,12 @@ int Sensor_Https_Post_On_Line(void)
             if (false == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_GOT_IP))
                 return SENSOR_DATA_FAIL;
         }
+
+#if (IOT_DEVICE_DATA_TX_EN == 1)
         osDelay(10);
     }
+#else
+    return SENSOR_DATA_OK;
+#endif
 }
 

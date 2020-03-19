@@ -21,6 +21,8 @@
 #ifndef SRC_JOBS_IOT_JOB_CONFIG_H_
 #define SRC_JOBS_IOT_JOB_CONFIG_H_
 
+#include "blewifi_configuration.h"
+
 // Get from console
 // =================================================
 #define AWS_IOT_MQTT_HOST              "aodq6fudxv6nm-ats.iot.ap-northeast-1.amazonaws.com" ///< Customer specific MQTT HOST. The same will be used for Thing Shadow
@@ -65,7 +67,13 @@
 
 // Auto Reconnect specific config
 #define AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL 1000 ///< Minimum time before the First reconnect attempt is made as part of the exponential back-off algorithm
+
+#ifdef BLEWIFI_ENHANCE_AWS
+#define AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL 60000 // ms
+#else
 #define AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL 128000 ///< Maximum time interval after which exponential back-off will stop attempting to reconnect.
+#endif
+
 #define DISABLE_METRICS false ///< Disable the collection of metrics by setting this to true
 
 

@@ -145,8 +145,11 @@ typedef enum blewifi_ctrl_sys_state
 #define BLEWIFI_CTRL_EVENT_BIT_GOT_IP   0x00000008U
 #define BLEWIFI_CTRL_EVENT_BIT_IOT_INIT 0x00000010U
 #define BLEWIFI_CTRL_EVENT_BIT_NETWORK  0x00000020U
+
+#if (IOT_DEVICE_DATA_TX_EN == 1)
 #define CAN_DO_IOT_RX                   0x00000040U
 #define CAN_DO_IOT_TX                   0x00000080U
+#endif
 
 #ifdef SLEEP_TIMER_ISSUE
 // When button or key press timeout, system will trigger button event occasionally.

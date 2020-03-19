@@ -40,6 +40,7 @@ extern "C" {
 #endif
 
 #include "aws_iot_mqtt_client_common_internal.h"
+#include "blewifi_configuration.h"
 
 /**
   * This is for the case when the aws_iot_mqtt_internal_send_packet Fails.
@@ -101,9 +102,16 @@ static IoT_Error_t _aws_iot_mqtt_handle_reconnect(AWS_IoT_Client *pClient) {
 
     pClient->clientData.currentReconnectWaitInterval *= 2;
 
+    #ifdef BLEWIFI_ENHANCE_AWS
+    if(AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL < pClient->clientData.currentReconnectWaitInterval) {
+        pClient->clientData.currentReconnectWaitInterval = AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL;
+    }
+    #else
     if(AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL < pClient->clientData.currentReconnectWaitInterval) {
         FUNC_EXIT_RC(NETWORK_RECONNECT_TIMED_OUT_ERROR);
     }
+    #endif
+    
     countdown_ms(&(pClient->reconnectDelayTimer), pClient->clientData.currentReconnectWaitInterval);
     FUNC_EXIT_RC(rc);
 }

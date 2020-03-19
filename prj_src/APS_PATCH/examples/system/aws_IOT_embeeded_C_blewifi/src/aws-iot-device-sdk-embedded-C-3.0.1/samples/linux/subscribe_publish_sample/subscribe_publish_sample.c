@@ -141,7 +141,7 @@ void disconnectCallbackHandler(AWS_IoT_Client *pClient, void *data) {
     }
 }
 
-
+#if (IOT_DEVICE_DATA_TX_EN == 1)
 int mqtt_main(int argc, char **argv) {
 
     IoT_Error_t rc = FAILURE;
@@ -326,3 +326,187 @@ int mqtt_main(int argc, char **argv) {
 
     return rc;
 }
+#else
+volatile uint8_t g_u8AwsInit = 0;
+
+int mqtt_main(int argc, char **argv) {
+
+    IoT_Error_t rc = FAILURE;
+
+    IoT_Client_Init_Params mqttInitParams = iotClientInitParamsDefault;
+    IoT_Client_Connect_Params connectParams = iotClientConnectParamsDefault;
+
+    mqttInitParams.enableAutoReconnect = true;
+    mqttInitParams.pHostURL = g_tAWSDeviceInfo.host;
+    mqttInitParams.port = port;
+    mqttInitParams.mqttCommandTimeout_ms = 5000;
+    mqttInitParams.tlsHandshakeTimeout_ms = 20000;
+    mqttInitParams.isSSLHostnameVerify = true;
+    mqttInitParams.disconnectHandler = disconnectCallbackHandler;
+    mqttInitParams.disconnectHandlerData = NULL;
+
+    if(!g_u8AwsInit)
+    {
+        IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
+        
+        if (MW_FIM_OK != MwFim_FileRead(MW_FIM_IDX_GP13_PROJECT_AWS_DEVICE_INFO, 0, MW_FIM_GP13_AWS_DEVICE_INFO_SIZE, (uint8_t*)&g_tAWSDeviceInfo))
+        {
+            IOT_INFO("\nMwFim Read AWS_DEVICE_INFO Fail\n");
+            // if fail, get the default value
+            memcpy(&g_tAWSDeviceInfo.client_id, &g_tMwFimDefaultGp13AWSDeviceInfo.client_id, CLIENT_ID_SIZE);
+            memcpy(&g_tAWSDeviceInfo.host, &g_tMwFimDefaultGp13AWSDeviceInfo.host, HOST_ADDRESS_SIZE);
+            memcpy(&g_tAWSDeviceInfo.thing_name, &g_tMwFimDefaultGp13AWSDeviceInfo.thing_name, THING_NAME_SIZE);
+        }
+        else
+        {
+            IOT_INFO("\nMwFim Read AWS_DEVICE_INFO OK\n");
+        }
+    
+    
+        memset(&g_tAWSDevicePrivateKeys, 0x00, sizeof(g_tAWSDevicePrivateKeys));
+    
+        
+        //if (MW_FIM_OK != MwFim_FileRead(MW_FIM_IDX_GP13_PROJECT_AWS_PRIVATE_KEYS, 0, PRIVATE_KEY_SIZE, (uint8_t*)&temp_Pri))
+        if (MW_FIM_OK != MwFim_FileRead(MW_FIM_IDX_GP13_PROJECT_AWS_PRIVATE_KEYS, 0, MW_FIM_GP13_AWS_PRIVATE_KEY_SIZE, (uint8_t*)(&g_tAWSDevicePrivateKeys)))
+        {
+            IOT_INFO("\nMwFim Read AWS_PRIVATE_KEYS Fail\n");
+            // if fail, get the default value
+            memcpy(g_tAWSDevicePrivateKeys.PrivateKey, g_tMwFimDefaultGp13AWSPrivateKey.PrivateKey, MW_FIM_GP13_AWS_PRIVATE_KEY_SIZE);
+        }
+        else
+        {
+            IOT_INFO("\nMwFim Read AWS_PRIVATE_KEYS OK\n");
+    
+        }
+    
+        memset(&g_tAWSDeviceCertPEM, 0x00, sizeof(g_tAWSDeviceCertPEM));
+        
+        //if (MW_FIM_OK != MwFim_FileRead(MW_FIM_IDX_GP13_PROJECT_AWS_CERT_PEM, 0, CERT_PEM_SIZE, (uint8_t*)&temp_cert))
+        if (MW_FIM_OK != MwFim_FileRead(MW_FIM_IDX_GP13_PROJECT_AWS_CERT_PEM, 0, MW_FIM_GP13_AWS_CERT_PEM_SIZE, (uint8_t*)(&g_tAWSDeviceCertPEM)))
+        
+        {
+            IOT_INFO("\nMwFim Read AWS_CERT_PEM Fail\n");
+            // if fail, get the default value
+            memcpy(g_tAWSDeviceCertPEM.CertPEM, g_tMwFimDefaultGp13AWSCertPEM.CertPEM, MW_FIM_GP13_AWS_CERT_PEM_SIZE);
+        }
+        else
+        {
+            IOT_INFO("\nMwFim Read AWS_CERT_PEM OK\n");
+    
+        }
+    
+        uint8_t ubaMacAddr[6];
+    
+        // get the mac address from flash
+        wifi_config_get_mac_address(WIFI_MODE_STA, ubaMacAddr);
+    
+        memset(SubscribeTopic_Door,0x00,sizeof(SubscribeTopic_Door));
+        sprintf(SubscribeTopic_Door,SUBSCRIBE_DOOR_TOPIC,ubaMacAddr[3], ubaMacAddr[4], ubaMacAddr[5]);
+    
+    
+        memset(SubscribeTopic_Light,0x00,sizeof(SubscribeTopic_Light));
+        sprintf(SubscribeTopic_Light,SUBSCRIBE_LIGHT_TOPIC,ubaMacAddr[3], ubaMacAddr[4], ubaMacAddr[5]);
+    
+        rc = aws_iot_mqtt_init(&client, &mqttInitParams);
+        if(SUCCESS != rc) {
+            IOT_ERROR("aws_iot_mqtt_init returned error : %d ", rc);
+            return rc;
+        }
+
+        g_u8AwsInit = 1;
+    }
+
+    #ifdef BLEWIFI_ENHANCE_AWS
+    connectParams.keepAliveIntervalInSec = 60;
+    #else
+    connectParams.keepAliveIntervalInSec = 120;
+    #endif
+    
+    connectParams.isCleanSession = true;
+    connectParams.MQTTVersion = MQTT_3_1_1;
+    connectParams.pClientID = g_tAWSDeviceInfo.client_id;
+    connectParams.clientIDLen = (uint16_t) strlen(g_tAWSDeviceInfo.client_id);
+    connectParams.isWillMsgPresent = false;
+
+
+
+    BleWifi_Ctrl_EventStatusSet(BLEWIFI_CTRL_EVENT_BIT_IOT_INIT, false);
+
+    IOT_INFO("%s connect to %s:%d", connectParams.pClientID, mqttInitParams.pHostURL, mqttInitParams.port)
+    
+    rc = aws_iot_mqtt_connect(&client, &connectParams);
+    if(SUCCESS != rc) {
+        IOT_ERROR("Err(%d) connect to %s:%d", rc, mqttInitParams.pHostURL, mqttInitParams.port);
+        return rc;
+    }
+
+    #ifdef BLEWIFI_ENHANCE_AWS
+    BleWifi_Ctrl_MsgSend(BLEWIFI_CTRL_MSG_NETWORKING_STOP, NULL, 0);
+    #endif
+
+    #if 0
+    /*
+     * Enable Auto Reconnect functionality. Minimum and Maximum time of Exponential backoff are set in aws_iot_config.h
+     *  #AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL
+     *  #AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL
+     */
+    rc = aws_iot_mqtt_autoreconnect_set_status(&client, true);
+    if(SUCCESS != rc) {
+        IOT_ERROR("Unable to set Auto Reconnect to true - %d", rc);
+        return rc;
+    }
+    #endif
+
+
+    IOT_INFO("Subscribing Light topic : %s", SubscribeTopic_Light);
+    rc = aws_iot_mqtt_subscribe(&client, SubscribeTopic_Light, strlen(SubscribeTopic_Light), QOS1, iot_subscribe_callback_handler_Light, NULL);
+    if(SUCCESS != rc) {
+        IOT_ERROR("Error subscribing Light : %d ", rc);
+        return rc;
+    }
+
+     // init behavior
+    BleWifi_Ctrl_EventStatusSet(BLEWIFI_CTRL_EVENT_BIT_IOT_INIT, true);
+
+         // When got ip then start timer to post data
+    osTimerStop(g_tAppCtrlHttpPostTimer);
+    osTimerStart(g_tAppCtrlHttpPostTimer, POST_DATA_TIME);
+
+    while(1)
+    {
+        IOT_INFO("-->RX Loop");
+        if (false == BleWifi_Ctrl_EventStatusWait(BLEWIFI_CTRL_EVENT_BIT_GOT_IP, 0xFFFFFFFF))
+        {
+            continue;
+        }
+
+        //Max time the yield function will wait for read messages
+        {
+            uint32_t u32YieldTimeout = 500;
+
+            IOT_INFO("-->RX yield");
+
+            if (SENSOR_DATA_OK == Sensor_Data_CheckEmpty())
+            {
+                u32YieldTimeout = YIELD_TIMEOUT;
+            }
+
+            rc = aws_iot_mqtt_yield(&client, u32YieldTimeout);
+            
+            IOT_INFO("<--RX yield timeout[%u]", u32YieldTimeout);
+        }
+        
+        if (true == BleWifi_Ctrl_EventStatusGet(BLEWIFI_CTRL_EVENT_BIT_GOT_IP))
+        {
+            Sensor_Https_Post_On_Line();
+        }
+
+        if(SENSOR_DATA_OK == Sensor_Data_CheckEmpty())
+        {
+            BleWifi_Wifi_SetDTIM(YIELD_TIMEOUT);
+        }
+        
+        IOT_INFO("<--RX Loop");
+    }
+}
+#endif
